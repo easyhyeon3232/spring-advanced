@@ -3,9 +3,13 @@ package org.example.expert.domain.auth.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
+import java.util.Optional;
+
 import org.example.expert.config.JwtUtil;
 import org.example.expert.config.PasswordEncoder;
+import org.example.expert.domain.auth.dto.request.SigninRequest;
 import org.example.expert.domain.auth.dto.request.SignupRequest;
+import org.example.expert.domain.auth.dto.response.SigninResponse;
 import org.example.expert.domain.auth.dto.response.SignupResponse;
 import org.example.expert.domain.auth.exception.AuthException;
 import org.example.expert.domain.user.entity.User;
@@ -68,6 +72,28 @@ class AuthServiceTest {
 
 		// then
 		assertEquals("이미 존재하는 이메일입니다." , authException.getMessage());
+	}
+
+	@Test
+	void 로그인_성공() {
+		// given
+		SigninRequest request = new SigninRequest("user@email.com", "1234");
+		String encodedPassword = "encodedPW";
+		String token = "token";
+
+		User mockUser = new User(request.getEmail(), encodedPassword, UserRole.USER);
+		ReflectionTestUtils.setField(mockUser, "id", 50L);
+
+		given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(mockUser));
+		given(passwordEncoder.matches(request.getPassword(), mockUser.getPassword())).willReturn(true);
+		given(jwtUtil.createToken(50L, "user@email.com", UserRole.USER)).willReturn(token);
+
+		// when
+		SigninResponse response = authService.signin(request);
+
+		// then
+		assertNotNull(response);
+		assertEquals(token, response.getBearerToken());
 	}
 
 }
