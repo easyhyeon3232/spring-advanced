@@ -117,7 +117,7 @@ class AuthServiceTest {
 		SigninRequest request = signinRequest();
 		String encodedPW = "encodedPW";
 
-		User mockUser = createUser(request.getEmail(), request.getPassword(), DEFAULT_Enum_ROLE);
+		User mockUser = createUser(request.getEmail(), encodedPW, DEFAULT_Enum_ROLE);
 
 		given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(mockUser));
 		given(passwordEncoder.matches(request.getPassword(), mockUser.getPassword())).willReturn(false);
