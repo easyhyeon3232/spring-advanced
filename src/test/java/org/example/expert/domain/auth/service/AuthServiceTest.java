@@ -3,15 +3,10 @@ package org.example.expert.domain.auth.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
-import java.util.Optional;
-
 import org.example.expert.config.JwtUtil;
 import org.example.expert.config.PasswordEncoder;
-import org.example.expert.domain.auth.dto.request.SigninRequest;
 import org.example.expert.domain.auth.dto.request.SignupRequest;
-import org.example.expert.domain.auth.dto.response.SigninResponse;
 import org.example.expert.domain.auth.dto.response.SignupResponse;
-import org.example.expert.domain.auth.exception.AuthException;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.enums.UserRole;
 import org.example.expert.domain.user.repository.UserRepository;
@@ -59,5 +54,6 @@ class AuthServiceTest {
 		assertNotNull(request);
 		assertEquals(token, response.getBearerToken());
 	}
+
 
 }
