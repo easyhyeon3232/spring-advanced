@@ -1,5 +1,6 @@
 package org.example.expert.domain.auth.service;
 
+import static org.example.expert.data.UserFixture.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
@@ -13,14 +14,12 @@ import org.example.expert.domain.auth.dto.response.SigninResponse;
 import org.example.expert.domain.auth.dto.response.SignupResponse;
 import org.example.expert.domain.auth.exception.AuthException;
 import org.example.expert.domain.user.entity.User;
-import org.example.expert.domain.user.enums.UserRole;
 import org.example.expert.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -40,17 +39,18 @@ class AuthServiceTest {
 	@Test
 	public void 회원가입_성공() {
 		// given
-		SignupRequest request = new SignupRequest("test@email.com", "password123", "USER");
+		SignupRequest request = signupRequest();
 		String encodedPassword = "encodedPassword123";
 		String token = "token";
 
-		User mockUser = new User(request.getEmail(), encodedPassword, UserRole.USER);
-		ReflectionTestUtils.setField(mockUser, "id", 1L);
+		// 이메일이 "?"인 가짜 유저 생성
+		User mockUser = createUser(request.getEmail(), encodedPassword, DEFAULT_Enum_ROLE);
+
 
 		given(userRepository.existsByEmail(request.getEmail())).willReturn(false);
 		given(passwordEncoder.encode(request.getPassword())).willReturn(encodedPassword);
 		given(userRepository.save(any(User.class))).willReturn(mockUser);
-		given(jwtUtil.createToken(1L, "test@email.com", UserRole.USER)).willReturn(token);
+		given(jwtUtil.createToken(1L, DEFAULT_EMAIL, DEFAULT_Enum_ROLE)).willReturn(token);
 
 		// when
 		SignupResponse response = authService.signup(request);
@@ -63,7 +63,7 @@ class AuthServiceTest {
 	@Test
 	void 회원가입_실패_이미_존재하는_이메일() {
 		// given
-		SignupRequest request = new SignupRequest("aaa@email.com", "1234", "USER");
+		SignupRequest request = signupRequest();
 
 		given(userRepository.existsByEmail(request.getEmail())).willReturn(true);
 
@@ -77,16 +77,15 @@ class AuthServiceTest {
 	@Test
 	void 로그인_성공() {
 		// given
-		SigninRequest request = new SigninRequest("user@email.com", "1234");
+		SigninRequest request = signinRequest();
 		String encodedPassword = "encodedPW";
 		String token = "token";
 
-		User mockUser = new User(request.getEmail(), encodedPassword, UserRole.USER);
-		ReflectionTestUtils.setField(mockUser, "id", 50L);
+		User mockUser = createUser(request.getEmail(), encodedPassword, DEFAULT_Enum_ROLE);
 
 		given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(mockUser));
 		given(passwordEncoder.matches(request.getPassword(), mockUser.getPassword())).willReturn(true);
-		given(jwtUtil.createToken(50L, "user@email.com", UserRole.USER)).willReturn(token);
+		given(jwtUtil.createToken(1L, DEFAULT_EMAIL, DEFAULT_Enum_ROLE)).willReturn(token);
 
 		// when
 		SigninResponse response = authService.signin(request);
@@ -96,4 +95,39 @@ class AuthServiceTest {
 		assertEquals(token, response.getBearerToken());
 	}
 
+	@Test
+	void 로그인_실패_가입되지_않은_유저() {
+
+		// given
+		SigninRequest request = signinRequest();
+
+		given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.empty());
+
+		// When
+		AuthException authException = assertThrows(AuthException.class, () -> authService.signin(request));
+
+		// Then
+		assertEquals("가입되지 않은 유저입니다.", authException.getMessage());
+
+	}
+
+	@Test
+	void 로그인_실패_비번이_일치하지_않음() {
+		// given
+		SigninRequest request = signinRequest();
+		String encodedPW = "encodedPW";
+
+		User mockUser = createUser(request.getEmail(), request.getPassword(), DEFAULT_Enum_ROLE);
+
+		given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(mockUser));
+		given(passwordEncoder.matches(request.getPassword(), mockUser.getPassword())).willReturn(false);
+
+		// When
+		AuthException authException = assertThrows(AuthException.class, () ->  {
+			authService.signin(request);
+		});
+
+		// Then
+		assertEquals("잘못된 이메일과 비밀번호입니다.", authException.getMessage());
+	}
 }
