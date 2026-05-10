@@ -1,5 +1,7 @@
 package org.example.expert.domain.auth.dto.request;
 
+import org.example.expert.domain.user.enums.UserRole;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -16,5 +18,5 @@ public class SignupRequest {
     @NotBlank
     private String password;
     @NotBlank
-    private String userRole;
+    private UserRole userRole;
 }
