@@ -7,6 +7,7 @@ import org.example.expert.config.JwtUtil;
 import org.example.expert.config.PasswordEncoder;
 import org.example.expert.domain.auth.dto.request.SignupRequest;
 import org.example.expert.domain.auth.dto.response.SignupResponse;
+import org.example.expert.domain.auth.exception.AuthException;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.enums.UserRole;
 import org.example.expert.domain.user.repository.UserRepository;
@@ -55,5 +56,18 @@ class AuthServiceTest {
 		assertEquals(token, response.getBearerToken());
 	}
 
+	@Test
+	void 회원가입_실패_이미_존재하는_이메일() {
+		// given
+		SignupRequest request = new SignupRequest("aaa@email.com", "1234", "USER");
+
+		given(userRepository.existsByEmail(request.getEmail())).willReturn(true);
+
+		// when
+		AuthException authException = assertThrows(AuthException.class, () -> authService.signup(request));
+
+		// then
+		assertEquals("이미 존재하는 이메일입니다." , authException.getMessage());
+	}
 
 }
